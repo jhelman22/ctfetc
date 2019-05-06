@@ -386,14 +386,198 @@ Password for *bandit24*: **UoMYTrfrBFHyQXmg6gzctqAwOmw1IohZ**
 **user:** *bandit24*  
 **pass:** *UoMYTrfrBFHyQXmg6gzctqAwOmw1IohZ*
 
+So we need to brute force this thing...
 
+Let's generate all the pin codes and dump them in a file.
 
+`for i in {0000..9999};do echo "UoMYTrfrBFHyQXmg6gzctqAwOmw1IohZ $i";done > pins.txt`
 
+`nc localhost 30002 < nums.txt | grep -v Wrong`
 
+Password for *bandit25*: **uNG9O58gUE7snukf3bvZ0rxhtnjzSGzG**
 
+## Bandit 25
 
+**user:** *bandit25*  
+**pass:** *uNG9O58gUE7snukf3bvZ0rxhtnjzSGzG*
 
+So we just try to connect with the private key...
 
+`ssh -i bandit26.key bandit26@localhost`
+
+But the connection just automatically quits... The description for this level tells us 
+that *bandit26* is using a shell that is not `/bin/sh`. So let's see what it is...
+
+`cat /etc/passwd|grep bandit26`
+
+So it's using some shell `/usr/bin/showtext`
+
+`cat /usr/bin/showtext`
+
+So it's calling the `more` command. But `more` only stops output if the screen isn't big 
+enough to display it all. So let's connect again with a smaller console window.
+
+Ok we're stuck in the `more` command. Great! Now reading the manual page for `more` 
+there is a the command `v` to enter a vi editor.
+
+And being familiar with vi, i know that we can execute commands and even drop into a shell 
+from within the editor.
+
+But crap, we execute `:shell` and end up in the `more` command. That's because the shell for 
+*bandit26* is still the same. So we can type `:set shell=/bin/bash` in vi and then `:shell` 
+and we are in a proper bash shell.
+
+`cat /etc/bandit_pass/bandit26`
+
+Password for *bandit26*: **5czgV9L3Xx8JPOyRbXh6lQbmIOWvPT6Z**
+
+## Bandit 26
+
+**user:** *bandit26*  
+**pass:** *5czgV9L3Xx8JPOyRbXh6lQbmIOWvPT6Z*
+
+This doesn't really matter because of that crazy shell setup. So once we can get back to our 
+*bandit26* bash shell. We `ls` the home directory. There is a *setuid* binary called 
+`bandit27-do`.
+
+`./bandit27-do cat /etc/bandit_pass/bandit27`
+
+Password for *bandit27*: **3ba3118a22e93127a4ed485be72ef5ea**
+
+## Bandit 27
+
+**user:** *bandit27*  
+**pass:** *3ba3118a22e93127a4ed485be72ef5ea*
+
+`git clone ssh://bandit27-git@localhost/home/bandit27-git/repo`  
+`cd repo`  
+`cat README`
+
+Password for *bandit27*: **0ef186ac70e04ea33b4c1853d2526fa2**
+
+## Bandit 28
+
+**user:** *bandit28*  
+**pass:** *0ef186ac70e04ea33b4c1853d2526fa2*
+
+`git clone ssh://bandit28-git@localhost/home/bandit28-git/repo`  
+`cd repo`  
+`cat README.md`
+
+We see a *username* and *password* but the *password* is all Xs. Let's check the log of 
+commits for this repository.
+
+`git log`
+
+We see the last commit had a message "fix info leak". I bet if we check the changes on that 
+commit we'll see the plaintext password.
+
+`git show --full-diff`
+
+Password for *bandit29*: **bbc96594b4e001778eee9975372716b2**
+
+## Bandit 29
+
+**user:** *bandit29*  
+**pass:** *bbc96594b4e001778eee9975372716b2*
+
+`git clone ssh://bandit29-git@localhost/home/bandit29-git/repo`  
+`cd repo`  
+`cat README.md`
+
+We see a little hint "no passwords in production!". So the plaintext password is probably in 
+this file on a different branch.
+
+`git branch -a`
+
+We see three branches. Let's checkout the `dev` branch.
+
+`git checkout dev`  
+`cat README.md`
+
+Password for *bandit30*: **5b90576bedb2cc04c86a9e924ce42faf**
+
+## Bandit 30
+
+**user:** *bandit30*  
+**pass:** *5b90576bedb2cc04c86a9e924ce42faf*
+
+`git clone ssh://bandit30-git@localhost/home/bandit30-git/repo`  
+`cd repo`  
+`cat README.md`
+
+"just an empty file... muahahaha". So let's check the commit log.
+
+`git log`
+
+Just a single commit. So no help there... Let's look at the branches.
+
+`git branch -a`
+
+Just one branch. So no help there... There are a few ways to include metadata or 
+messages in git repositories. One of the ways is with *tags*. In git we can add *tags* 
+to branches and actually include messages(ie descriptions) of those tags.
+
+`git tag`
+
+Aha we see a single git tag called secret. Let's check if there is a message attached to that 
+tag.
+
+`git show secret`
+
+Password for *bandit31*: **47e603bb428404d265f59c42920d81e5**
+
+## Bandit 31
+
+**user:** *bandit31*  
+**pass:** *47e603bb428404d265f59c42920d81e5*
+
+`git clone ssh://bandit31-git@localhost/home/bandit31-git/repo`  
+`cd repo`  
+`cat README.md`
+
+Ok so this is just checking to see if we know how to push a file to the remote repo.
+
+`echo May I come in? > key.txt`  
+`git add key.txt`
+
+Uh oh... that file is in our `.gitignore` which basically means it won't be pushed up to 
+the remote repository. We can force it to though.
+
+`git add -f key.txt`  
+`git commit -a -m "adding file"`  
+`git push`
+
+Password for *bandit32*: **56a9bf19c63d650ce78e6ec0354ee45e**
+
+## Bandit 32
+
+**user:** *bandit32*  
+**pass:** *56a9bf19c63d650ce78e6ec0354ee45e*
+
+"WELCOME TO UPPERCASE SHELL"...
+
+All of our commands are getting capitalized so they don't work... We do get a little hint. 
+Every failed command says `sh: 1: blah: not found`.  So we are executing in a bourne-shell. 
+If we read the man page (`man sh`) we see a that `sh` handles command line arguments like 
+most programs, assigning the command to index 0 (`argv[0]` for those familiar with C syntax) 
+and the arguments passed to it from index 1 to n. And if we recall with shell scripts, 
+the `$` operator gets the value of a variable. So if we just call:
+
+`$0`
+
+It should execute `/bin/sh`. And it does. We get a clean shell.
+
+`cat /etc/bandit_pass/bandit33`
+
+Password for *bandit33*: **c9c3199ddf4121b10cf581a98d51caee**
+
+## Bandit 33
+
+**user:** *bandit33*
+**pass:** *c9c3199ddf4121b10cf581a98d51caee*
+
+And at this moment, no level 34 exists yet... So we completed Bandit!
 
 
 
