@@ -3,7 +3,7 @@
 ## Bandit -- COMPLETE
 ## Natas -- In Progress (need to copy writeup from old blog)
 ## Leviathan -- COMPLETE
-## Krypton -- In Progress (never did a write up though so have to start from beginning)
+## Krypton -- In Progress
 ## Narnia -- In Progress
 ## Behemoth -- Not Started
 ## Utumno -- Not Started
