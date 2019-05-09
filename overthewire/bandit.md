@@ -578,15 +578,3 @@ Password for *bandit33*: **c9c3199ddf4121b10cf581a98d51caee**
 **pass:** *c9c3199ddf4121b10cf581a98d51caee*
 
 And at this moment, no level 34 exists yet... So we completed Bandit!
-
-
-
-
-
-
-
-
-
-
-
-
