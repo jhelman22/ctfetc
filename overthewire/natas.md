@@ -107,8 +107,123 @@ Password for *natas7*: **7z3hEENjQtflzgnT29q7wAvMNfZdh0i9**
 **pass:** *7z3hEENjQtflzgnT29q7wAvMNfZdh0i9*  
 **url:** [http://natas7.natas.labs.overthewire.org](http://natas7.natas.labs.overthewire.org)
 
+There's a hint in the source
 
+> hint: password for webuser natas8 is in /etc/natas_webpass/natas8
 
+So I imagine the `index.php?page=` is vulnerable to a little directory traversal.
+
+If this `index.php?page=./home` returns the same thing as `index.php?page=home` then 
+we are in!
+
+And it does. So let's try this `index.php?page=../../../../../etc/natas_webpass/natas8`
+
+Password for *natas8*: **DBfUBfqQG69KvJvJ1iAbMoIpwSNQ9bWe**
+
+## Natas 8
+
+**user:** *natas8*  
+**pass:** *DBfUBfqQG69KvJvJ1iAbMoIpwSNQ9bWe*  
+**url:** [http://natas8.natas.labs.overthewire.org](http://natas8.natas.labs.overthewire.org)
+
+So they gave us the source code again and our input is being passed through a few 
+PHP functions. We can just reverse those functions with an online php editor.
+
+```php
+<?
+  $encodedSecret = "3d3d516343746d4d6d6c315669563362";
+  echo base64_decode(strrev(hex2bin($encodedSecret)));
+?>
+```
+
+So we got our input and when we enter that we get our password!
+
+Password for *natas9*: **W0mMhUcRRnG8dcghE4qvk3JA9lGt8nDl**
+
+## Natas 9
+
+**user:** *natas9*  
+**pass:** *W0mMhUcRRnG8dcghE4qvk3JA9lGt8nDl*  
+**url:** [http://natas9.natas.labs.overthewire.org](http://natas9.natas.labs.overthewire.org)
+
+So we get the source code again and our input is just being `passthru`d to the `grep` 
+command with no quotes, sanitization, or anything.
+
+We can just use `; cat /etc/natas_webpass/natas10;` as our input which will cancel the 
+`grep` command with the first semicolon, run our `cat` command and then ignore the rest 
+with the second semicolon.
+
+There's our password!
+
+Password for *natas10*: **nOpp1igQAkUzaI1GUUjzn1bFVj7xCNzu**
+
+## Natas 10
+
+**user:** *natas10*  
+**pass:** *nOpp1igQAkUzaI1GUUjzn1bFVj7xCNzu*  
+**url:** [http://natas10.natas.labs.overthewire.org](http://natas10.natas.labs.overthewire.org)
+
+Same code as last challenge, but now semicolons, pipes and ampersands are being filtered 
+out. Can we still execute arbitrary code?
+
+Well unfortunately yes. `grep` can take multiple files as arguments. So we can search 
+for any string `.*` (in regex) in both files.
+
+`.* /etc/natas_webpass/natas11`
+
+And there's our password!
+
+Password for *natas11*: **U82q5TCMMQ9xuFoI3dYX61s7OZD9JKoK**
+
+## Natas 11
+
+**user:** *natas11*  
+**pass:** *U82q5TCMMQ9xuFoI3dYX61s7OZD9JKoK*  
+**url:** [http://natas11.natas.labs.overthewire.org](http://natas11.natas.labs.overthewire.org)
+
+So we got the source again. Looks like there is some XOR stuff going on. Luckily XOR 
+is reversable so let's reverse engineer this code.
+
+```php
+function xor_encrypt($in, $in_key) {
+    $key = $in_key;
+    $text = $in;
+    $outText = '';
+
+    // Iterate through each character
+    for($i=0;$i<strlen($text);$i++) {
+    $outText .= $text[$i] ^ $key[$i % strlen($key)];
+    }
+
+    return $outText;
+}
+
+$a = base64_decode("ClVLIh4ASCsCBE8lAxMacFMZV2hdVVotEhhUJQNVAmhSEV4sFxEIaAw%3D");
+$b = json_encode(array('showpassword'=>'no','bgcolor'=>'#ffffff'));
+echo xor_encrypt($a,$b);
+```
+
+So this gives us "qw8J" repeated over and over so that's our key!
+
+Now we just have to get the correct cookie for that key and our `showpassword=yes`.
+
+```php
+$a = json_encode(array('showpassword'=>'yes','bgcolor'=>'#ffffff'));
+$b = xor_encrypt($a, 'qw8J');
+echo base64_encode($b);
+```
+
+We get the Base64 string "ClVLIh4ASCsCBE8lAxMacFMOXTlTWxooFhRXJh4FGnBTVF4sFxFeLFMK"
+
+So let's swap that in for our `data` cookie and refresh the page!
+
+Password for *natas12*: **EDXp0pS26wLKHZy1rDBPUZk0RKfLGIR3**
+
+## Natas 12
+
+**user:** *natas12*  
+**pass:** *EDXp0pS26wLKHZy1rDBPUZk0RKfLGIR3*  
+**url:** [http://natas12.natas.labs.overthewire.org](http://natas12.natas.labs.overthewire.org)
 
 
 

@@ -453,7 +453,7 @@ Password for *bandit27*: **3ba3118a22e93127a4ed485be72ef5ea**
 `cd repo`  
 `cat README`
 
-Password for *bandit27*: **0ef186ac70e04ea33b4c1853d2526fa2**
+Password for *bandit28*: **0ef186ac70e04ea33b4c1853d2526fa2**
 
 ## Bandit 28
 
