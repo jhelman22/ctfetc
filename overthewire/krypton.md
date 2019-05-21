@@ -88,4 +88,57 @@ Password for *krypton4*: **BRUTE**
 **user:** *krypton4*  
 **pass:** *BRUTE*
 
+`cd /krypton/krypton4`  
+`cat README`
 
+So we have a Vigenere Cipher and they have told us that the key length is 6. That 
+helps a ton! We should just need to look at the cipher texts in six character blocks 
+and be able to figure out the key. So we need to script this out to count character 
+occurrences for each position in our six character blocks.
+
+`cd $(mktemp -d)`  
+`vi counter.rb`
+
+```ruby
+f1 = File.read("/krypton/krypton4/found1")
+f2 = File.read("/krypton/krypton4/found2")
+
+counts = 6.times.map{{}}
+[f1,f2].each do |ciphertext|
+  ciphertext.gsub(" ","").scan(/.{6}/).each do |block|
+    block.chars.each_with_index do |c,i|
+      counts[i][c] = counts[i][c] ? counts[i][c] + 1 : 1
+    end
+  end
+end
+puts counts.map.with_index{|c,i| "#{i}: #{Hash[c.sort_by{|k,v| -v}]}"}.join("\n\n")
+```
+
+Now we have the letter frequencies for each position in our six character block.
+
+We see for each position the highest frequency characters are:
+
+> 0: J
+> 1: V
+> 2: I or X
+> 3: O
+> 4: I
+> 5: C
+
+We know that in English, the letter 'e' is the most common.
+
+So if position 0, 'e' gets replaced with 'j'. Then we know the key starts with the letter 'f'.
+
+e = 4, j = 9 so key[0] = 9 - 4 = 5 = f
+
+We do this math with all the most frequent characters and we get a final key of `FREKEY`
+
+So we can copy the contents of `krypton5` into a Vigenere decoder online (or script your own) using 
+`FREKEY` as the key and we get our password.
+
+Password for *krypton5*: **CLEARTEXT**
+
+## Krypton 5
+
+**user:** *krypton5*  
+**pass:** *CLEARTEXT*

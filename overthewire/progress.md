@@ -4,7 +4,7 @@ Tracking with WeChall
 `WECHALLUSER="zumo" WECHALLTOKEN="3C990-A8065-D2F8B-022E3-0D678-DA82C" wechall`
 
 ## Bandit -- COMPLETE
-## Natas -- In Progress (need to copy writeup from old blog)
+## Natas -- In Progress
 ## Leviathan -- COMPLETE
 ## Krypton -- In Progress
 ## Narnia -- In Progress
