@@ -32,6 +32,24 @@ chal2_solution = "746865206b696420646f6e277420706c6179"
 chal2 = (chal2_a.hex ^ chal2_b.hex).to_s(16)
 solved?("Challenge 2", chal2, chal2_solution)
 
+# Challenge 3 (https://cryptopals.com/sets/1/challenges/3)
+# # Single-byte XOR Cipher
+# NOT SOLVED!
+def brute_chal3(input)
+  with_e_counts = (~!..~^).map do |char|
+    k = char * input.length
+    s = (input.hex ^ k.hex).to_s(16)
+    puts s
+    [s, s.count('e')]
+  end
+  with_e_counts.sort{|a,b| a[1] <=> -b[1]}[0][0]
+end
+
+chal3_a = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
+chal3 = brute_chal3(chal3_a)
+
+puts chal3
+
 
 
 
